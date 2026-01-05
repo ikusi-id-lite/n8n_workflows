@@ -44,61 +44,62 @@ jobs:
           import requests
           import glob
           import re
+          import sys
 
-          api_key = os.getenv('N8N_API_KEY')
-          base_url = os.getenv('N8N_BASE_URL').rstrip('/')
+          api_key = os.getenv('N8N_API_KEY', '').strip()
+          base_url = os.getenv('N8N_BASE_URL', '').strip().rstrip('/')
           mode = os.getenv('IMPORT_MODE')
           target_file = os.getenv('FILE_NAME')
 
           headers = {
-              "X-N8N-API-KEY": api_key
+              "X-N8N-API-KEY": api_key,
+              "Content-Type": "application/json"
           }
 
+          def clean_workflow_data(data):
+              """Mantiene solo las propiedades permitidas por la API de n8n."""
+              allowed_keys = ['name', 'nodes', 'connections', 'settings', 'staticData', 'meta', 'active']
+              return {k: v for k, v in data.items() if k in allowed_keys}
+
           def extract_id(filename):
-              # Cambiado de \d+ a [a-zA-Z0-9]+ para soportar IDs alfanuméricos
-              # Busca lo que esté entre el último '-' y el '.json'
               match = re.search(r'-([a-zA-Z0-9]+)\.json$', filename)
               return match.group(1) if match else None
 
           def upload_workflow(file_path):
               workflow_id = extract_id(file_path)
-              if not workflow_id:
-                  print(f"⚠️ No se pudo extraer ID de: {file_path}. Saltando...")
-                  return
+              if not workflow_id: return
 
-              if not os.path.exists(file_path):
-                  print(f"❌ El archivo {file_path} no existe en el repo.")
-                  return
+              try:
+                  with open(file_path, 'r', encoding='utf-8') as f:
+                      raw_data = json.load(f)
 
-              with open(file_path, 'r') as f:
-                  workflow_data = json.load(f)
+                  # Manejar si es una lista o un objeto
+                  data = raw_data[0] if isinstance(raw_data, list) else raw_data
+                  
+                  # LIMPIEZA: Solo enviamos lo que la API permite
+                  clean_data = clean_workflow_data(data)
 
-              # Limpieza: Para actualizar, n8n no debe recibir el ID dentro del body
-              workflow_data.pop('id', None)
+                  url = f"{base_url}/workflows/{workflow_id}"
+                  check_res = requests.get(url, headers=headers)
 
-              # Intentar ver si existe
-              check_res = requests.get(f"{base_url}/workflows/{workflow_id}", headers=headers)
+                  if check_res.status_code == 200:
+                      print(f"🔄 Actualizando: {workflow_id}")
+                      res = requests.put(url, headers=headers, json=clean_data)
+                  else:
+                      print(f"🆕 Creando nuevo (ID anterior no encontrado): {workflow_id}")
+                      res = requests.post(f"{base_url}/workflows", headers=headers, json=clean_data)
+                  
+                  if res.status_code in [200, 201]:
+                      print(f"✅ Éxito: {file_path}")
+                  else:
+                      print(f"❌ Error API ({res.status_code}): {res.text}")
 
-              if check_res.status_code == 200:
-                  print(f"🔄 Actualizando workflow ID: {workflow_id}")
-                  res = requests.put(f"{base_url}/workflows/{workflow_id}", headers=headers, json=workflow_data)
-              else:
-                  print(f"🆕 El ID {workflow_id} no existe en n8n. Creando como nuevo...")
-                  res = requests.post(f"{base_url}/workflows", headers=headers, json=workflow_data)
-              
-              if res.status_code in [200, 201]:
-                  print(f"✅ Éxito: {file_path}")
-              else:
-                  print(f"❌ Error en {file_path}: {res.status_code} - {res.text}")
+              except Exception as e:
+                  print(f"💥 Error crítico: {str(e)}")
 
           if mode == 'single':
-              if target_file:
-                  upload_workflow(target_file)
-              else:
-                  print("❌ Error: Modo 'single' requiere un nombre de archivo.")
+              upload_workflow(target_file)
           else:
-              files = glob.glob("*.json")
-              print(f"📂 Encontrados {len(files)} archivos JSON.")
-              for f in files:
+              for f in glob.glob("*.json"):
                   upload_workflow(f)
           EOF
