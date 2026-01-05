@@ -1,0 +1,1034 @@
+{
+  "updatedAt": "2026-01-05T15:20:16.778Z",
+  "createdAt": "2025-12-30T22:03:22.250Z",
+  "id": "YH8YLjPiXhZj70X2",
+  "name": "Github Versioning Prod",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Commit workflow changes",
+        "formDescription": "=Commit your workflow changes into Github",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Next",
+          "path": "commit",
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -768,
+        -112
+      ],
+      "id": "2d31647f-f463-4d24-a7bc-ddc4e68022c6",
+      "name": "On form submission",
+      "webhookId": "e3f3b1db-fd8c-4eb6-8a30-eea27306b92d"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/ikusi-id-lite/n8n_workflows/contents?ref=main",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -544,
+        -112
+      ],
+      "id": "9a3a6ebe-60ab-408a-b93b-fba5fed9ac9f",
+      "name": "HTTP Request",
+      "credentials": {
+        "githubApi": {
+          "id": "eM4GJsliOsdROpT0",
+          "name": "GitHub account ikusi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "github_file_names",
+        "include": "specifiedFields",
+        "fieldsToInclude": "name",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -112
+      ],
+      "id": "b998d4bf-0d68-4828-9e16-f99476a44c08",
+      "name": "Agg. to Array"
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -112
+      ],
+      "id": "1cb1927b-fe94-4f21-b9c1-3da80c54f355",
+      "name": "n8n",
+      "credentials": {
+        "n8nApi": {
+          "id": "dlLKAt7FlobVqMP4",
+          "name": "n8nton8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2514ed01-ff5d-43bb-90c1-a676c7af0a75",
+              "leftValue": "={{ $json.isArchived }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "e2b1944f-e146-494f-8860-e32e15180c20",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "values",
+        "include": "specifiedFields",
+        "fieldsToInclude": "id, name",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -112
+      ],
+      "id": "9f893552-a433-4b8b-aa71-886204799a1e",
+      "name": "Option aggregate"
+    },
+    {
+      "parameters": {
+        "defineForm": "json",
+        "jsonOutput": "=[\n    {\n\t\t\"fieldLabel\": \"Select a project\",\n\t\t\"fieldType\": \"dropdown\",\n\t\t\"fieldOptions\": {\n\t\t\t\"values\":{{ JSON.stringify($json.values.map(item=>({'option':item.name}))) }}\n\t\t},\n\t\t\"requiredField\": true\n\t}\n]",
+        "options": {
+          "formTitle": "Select a Project for version control"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        608,
+        -112
+      ],
+      "id": "518c575d-71f5-4c1d-862a-0c0c0cc32c4e",
+      "name": "Form",
+      "webhookId": "44f6854d-4cda-4b7d-8642-ad893354d296"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n\nconst all_projects = $('Option aggregate').first().json.values;\nconst nameToFind = $input.first().json['Select a project']; // Replace with the name you want to find\nconst found = all_projects.find(item => item.name === nameToFind);\nreturn [{ json: { id: found ? found.id : null } }];\n\n\n// for (const item of $input.all()) {\n//   item.json.myNewField = 1;\n// }\n\n// return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -112
+      ],
+      "id": "5e229028-fa86-4474-9ad6-df4117360661",
+      "name": "Selected id"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $json.id}}",
+          "mode": "id"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -112
+      ],
+      "id": "323d200b-8755-4275-b1dc-148f70334b52",
+      "name": "Find by project id",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "credentials": {
+        "n8nApi": {
+          "id": "dlLKAt7FlobVqMP4",
+          "name": "n8nton8n"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Project Not Foound",
+        "completionMessage": "=Your project  \"{{ $('On form submission').item.json.formQueryParameters.name }}\" doesn't exist.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "442b6197-07e8-4823-aaa4-bb07bcc6bd80",
+      "name": "Project not found",
+      "webhookId": "73c34803-3b2e-49f8-b569-2d468ad4e2b9"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "da7a365b-0d75-464d-918e-ac6af190146d",
+              "name": "id",
+              "value": "={{ $('Find by project id').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e4d6ee3d-613b-47d4-9e06-132de75dd609",
+              "name": "name",
+              "value": "={{ $('Find by project id').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "0ab5fac1-354b-4cea-bc71-fb62a153cefe",
+              "name": "github_file_name",
+              "value": "={{ $('Find by project id').item.json.name }}-{{ $('Find by project id').item.json.id }}.json",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        -192
+      ],
+      "id": "f0f13d11-310b-474a-92c0-2c7fb11f6525",
+      "name": "Workflow Values"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1856,
+        -192
+      ],
+      "id": "a7f6ebd2-7871-4c5d-b901-0267a77d9224",
+      "name": "JSON File"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        -192
+      ],
+      "id": "6c660c61-3500-4c27-9610-df669b124379",
+      "name": "To Base64"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "99923f83-9a4d-467e-830e-33d7449149fb",
+              "leftValue": "={{ $('Agg. to Array').item.json.github_file_names }}",
+              "rightValue": "={{ $json.github_file_name }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2400,
+        -272
+      ],
+      "id": "0ef5c183-fec9-4e24-882d-42f5a056fb95",
+      "name": "Found in github"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Commit the new workflow?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Yes"
+                  },
+                  {
+                    "option": "No"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "=New project found",
+          "formDescription": "=Project: \"{{$('Workflow Values').item.json.github_file_name}}\"\n\nThe project is not found in Github. Want to start a new project commit?"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        -32
+      ],
+      "id": "f4ff4116-dffd-42bc-9fd1-25f65e56dc46",
+      "name": "Commit as New",
+      "webhookId": "c476e4ea-2b70-4185-8b0b-f45065a2b6a2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Commit the new workflow?'] }}",
+                    "rightValue": "Yes",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b814b0e5-b09d-47eb-838f-f8d8b77f5047"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2784,
+        -32
+      ],
+      "id": "8173c12a-ce2c-4980-b3fe-17e321ec3900",
+      "name": "Is commit new"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "ikusi-id-lite",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n_workflows",
+          "mode": "list",
+          "cachedResultName": "n8n_workflows",
+          "cachedResultUrl": "https://github.com/ikusi-id-lite/n8n_workflows"
+        },
+        "filePath": "={{ $('Workflow Values').item.json.github_file_name }}",
+        "fileContent": "={{ $('To Base64').item.json.data }}",
+        "commitMessage": "={{ $json['Commit comment'] }}"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        3152,
+        -448
+      ],
+      "id": "8082ed15-a7f1-4ed4-86fd-c1d91d3c9ec8",
+      "name": "Update File",
+      "webhookId": "7807fe16-db54-4c7d-936b-d61e7909061a",
+      "credentials": {
+        "githubApi": {
+          "id": "eM4GJsliOsdROpT0",
+          "name": "GitHub account ikusi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "ikusi-id-lite",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n_workflows",
+          "mode": "list",
+          "cachedResultName": "n8n_workflows",
+          "cachedResultUrl": "https://github.com/ikusi-id-lite/n8n_workflows"
+        },
+        "filePath": "={{ $('Workflow Values').item.json.github_file_name }}",
+        "asBinaryProperty": false,
+        "additionalParameters": {
+          "reference": ""
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        2624,
+        -352
+      ],
+      "id": "51bffca0-64d6-4d4b-a560-a04ee7bfd6a3",
+      "name": "Download File",
+      "webhookId": "2627f6eb-e6f9-44d7-b943-508c8472f316",
+      "credentials": {
+        "githubApi": {
+          "id": "eM4GJsliOsdROpT0",
+          "name": "GitHub account ikusi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "No Update Detected",
+        "completionMessage": "No change is detected.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        -272
+      ],
+      "id": "a7a27165-5306-42e7-82a1-d51c5f4ee8f1",
+      "name": "No update detected",
+      "webhookId": "1014f819-d761-42f4-afbc-f3968ad7c44a"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "ikusi-id-lite",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n_workflows",
+          "mode": "list",
+          "cachedResultName": "n8n_workflows",
+          "cachedResultUrl": "https://github.com/ikusi-id-lite/n8n_workflows"
+        },
+        "filePath": "={{ $('Workflow Values').item.json.github_file_name }}",
+        "fileContent": "={{ $('To Base64').item.json.data }}",
+        "commitMessage": "={{ $json['Commit comment'] }}"
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        3136,
+        -32
+      ],
+      "id": "5de89a56-68b1-4f60-8c82-e7be1a84e7a7",
+      "name": "Commit new workflow",
+      "webhookId": "17c8a323-88d7-4475-a062-c217639b1a66",
+      "credentials": {
+        "githubApi": {
+          "id": "eM4GJsliOsdROpT0",
+          "name": "GitHub account ikusi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fd9b7654-3ec7-4e91-9607-9e0caabbffdf",
+              "leftValue": "={{ $json.content.replace(/\\n/g, '') }}",
+              "rightValue": "={{ $('To Base64').item.json.data }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2816,
+        -352
+      ],
+      "id": "dbbcd75f-8fe1-4fe7-b9d9-c5917850c7e4",
+      "name": "Check any update"
+    },
+    {
+      "parameters": {
+        "content": "## Update workflow if any",
+        "height": 380,
+        "width": 940,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2592,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "b13248d2-0c76-4fbc-bdfd-82d8c5384b12",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Commit new workflow",
+        "height": 320,
+        "width": 940,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2592,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "a69e6e6e-57b2-4e0b-98ad-7f81ec3f4223",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Commit Successful",
+        "completionMessage": "=Commited file name: \"{{$('Workflow Values').item.json.github_file_name}}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        -448
+      ],
+      "id": "dbb82728-af8c-4e6a-ab1a-e373c74a5b17",
+      "name": "Update successful",
+      "webhookId": "d684025b-1c8c-4b5f-a3eb-4780f8663785"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Commit Completed Successfully",
+        "completionMessage": "=Commited file name: \"{{$('Workflow Values').item.json.github_file_name}}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        -32
+      ],
+      "id": "30b8d7ef-fa00-4d4f-8487-3b7e3b29a4d4",
+      "name": "New Workflow Commit Successfully",
+      "webhookId": "d684025b-1c8c-4b5f-a3eb-4780f8663785"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Commit comment",
+              "fieldType": "textarea",
+              "placeholder": "1. New sub-workflow handling ...\n2. New update on ...",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Commit workflow",
+          "formDescription": "=Project name:  {{ $('Workflow Values').item.json.github_file_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        -32
+      ],
+      "id": "dc573281-422c-4c08-85ea-7995968dbc2c",
+      "name": "Comment for new workflow",
+      "webhookId": "8ccc5037-d4c1-4a50-900f-64fb81df1ead"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Commit comment",
+              "fieldType": "textarea",
+              "placeholder": "1. New sub-workflow handling ...\n2. New update on ...",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Commit workflow",
+          "formDescription": "=Project name:  {{ $('Workflow Values').item.json.github_file_name }}",
+          "buttonLabel": "Submit"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2992,
+        -448
+      ],
+      "id": "7f1c5032-33e1-4215-8460-d53831ac61d5",
+      "name": "Comment for commit",
+      "webhookId": "8ccc5037-d4c1-4a50-900f-64fb81df1ead"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        -176
+      ],
+      "id": "3aae50b8-da3a-4a9f-ad89-bd2b0fdb5bcf",
+      "name": "Limit"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Agg. to Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agg. to Array": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Option aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Selected id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Option aggregate": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selected id": {
+      "main": [
+        [
+          {
+            "node": "Find by project id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find by project id": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Project not found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Values": {
+      "main": [
+        [
+          {
+            "node": "Found in github",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON File": {
+      "main": [
+        [
+          {
+            "node": "To Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To Base64": {
+      "main": [
+        [
+          {
+            "node": "Workflow Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit as New": {
+      "main": [
+        [
+          {
+            "node": "Is commit new",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is commit new": {
+      "main": [
+        [
+          {
+            "node": "Comment for new workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update File": {
+      "main": [
+        [
+          {
+            "node": "Update successful",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Check any update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit new workflow": {
+      "main": [
+        [
+          {
+            "node": "New Workflow Commit Successfully",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check any update": {
+      "main": [
+        [
+          {
+            "node": "Comment for commit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No update detected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment for new workflow": {
+      "main": [
+        [
+          {
+            "node": "Commit new workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment for commit": {
+      "main": [
+        [
+          {
+            "node": "Update File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found in github": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Commit as New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "JSON File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "0afbc0e5-e760-484a-b5cf-e1ab09e43fa8",
+  "activeVersionId": null,
+  "versionCounter": 13,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2025-12-30T22:03:22.266Z",
+      "createdAt": "2025-12-30T22:03:22.266Z",
+      "role": "workflow:owner",
+      "workflowId": "YH8YLjPiXhZj70X2",
+      "projectId": "1qeaHhKiuNkXtH1U",
+      "project": {
+        "updatedAt": "2025-09-12T02:18:10.559Z",
+        "createdAt": "2025-06-03T14:16:48.112Z",
+        "id": "1qeaHhKiuNkXtH1U",
+        "name": "Manuel Duarte <manuel.duarte@waysolutions.co>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-06-03T14:16:48.113Z",
+            "createdAt": "2025-06-03T14:16:48.113Z",
+            "userId": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
+            "projectId": "1qeaHhKiuNkXtH1U",
+            "user": {
+              "updatedAt": "2026-01-05T14:08:24.000Z",
+              "createdAt": "2025-06-03T14:16:46.790Z",
+              "id": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
+              "email": "manuel.duarte@waysolutions.co",
+              "firstName": "Manuel",
+              "lastName": "Duarte",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-06-03T15:57:44.080Z",
+                "personalization_survey_n8n_version": "1.95.3",
+                "automationGoalDevops": [
+                  "monitoring-alerting",
+                  "ci-cd",
+                  "reporting"
+                ],
+                "companySize": "100-499",
+                "companyType": "saas",
+                "role": "devops",
+                "reportedSource": "google"
+              },
+              "settings": {
+                "userActivated": true,
+                "firstSuccessfulWorkflowId": "dQMq2B5YaTBHVbNv",
+                "userActivatedAt": 1748984754144,
+                "easyAIWorkflowOnboarded": true,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767122871058
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-05",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2025-12-30T19:33:01.716Z",
+      "createdAt": "2025-12-30T19:33:01.716Z",
+      "id": "ch6c8gADOwWYGvE0",
+      "name": "Prod"
+    }
+  ],
+  "activeVersion": null
+}
