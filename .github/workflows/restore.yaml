@@ -1,0 +1,98 @@
+name: n8n Import Workflows (Optimized)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Selecciona el modo de importación'
+        required: true
+        default: 'single'
+        type: choice
+        options:
+          - single
+          - all
+      file_name:
+        description: 'Archivo (ej: mi-flujo-12.json)'
+        required: false
+        default: ''
+
+jobs:
+  import-n8n:
+    runs-on: arc-runner-set
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Import Script
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          IMPORT_MODE: ${{ github.event.inputs.mode }}
+          FILE_NAME: ${{ github.event.inputs.file_name }}
+        run: |
+          python << 'EOF'
+          import os
+          import json
+          import requests
+          import glob
+          import re
+
+          api_key = os.getenv('N8N_API_KEY')
+          base_url = os.getenv('N8N_BASE_URL').rstrip('/')
+          mode = os.getenv('IMPORT_MODE')
+          target_file = os.getenv('FILE_NAME')
+
+          headers = {
+              "X-N8N-API-KEY": api_key,
+              "Content-Type": "application/json"
+          }
+
+          def extract_id(filename):
+              # Busca el ID al final del nombre antes de .json (ej: nombre-12.json -> 12)
+              match = re.search(r'-(\d+)\.json$', filename)
+              return match.group(1) if match else None
+
+          def upload_workflow(file_path):
+              workflow_id = extract_id(file_path)
+              if not workflow_id:
+                  print(f"No se pudo extraer ID de: {file_path}. Saltando...")
+                  return
+
+              with open(file_path, 'r') as f:
+                  workflow_data = json.load(f)
+
+              # Limpiamos el ID del cuerpo para evitar conflictos, n8n usará el de la URL
+              workflow_data.pop('id', None)
+
+              # 1. Intentar verificar si el workflow existe por ID
+              check_res = requests.get(f"{base_url}/workflows/{workflow_id}", headers=headers)
+
+              if check_res.status_code == 200:
+                  print(f"Actualizando workflow ID: {workflow_id}")
+                  res = requests.put(f"{base_url}/workflows/{workflow_id}", headers=headers, json=workflow_data)
+              else:
+                  print(f"El ID {workflow_id} no existe. Creando como nuevo flujo...")
+                  res = requests.post(f"{base_url}/workflows", headers=headers, json=workflow_data)
+              
+              if res.status_code in [200, 201]:
+                  print(f"Éxito: {file_path}")
+              else:
+                  print(f"Error en {file_path}: {res.status_code} - {res.text}")
+
+          if mode == 'single':
+              if target_file:
+                  upload_workflow(target_file)
+              else:
+                  print("Error: No se especificó archivo.")
+          else:
+              for f in glob.glob("*.json"):
+                  upload_workflow(f)
+          EOF
