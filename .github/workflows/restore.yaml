@@ -51,8 +51,7 @@ jobs:
           target_file = os.getenv('FILE_NAME')
 
           headers = {
-              "X-N8N-API-KEY": api_key,
-              "Content-Type": "application/json"
+              "X-N8N-API-KEY": api_key
           }
 
           def extract_id(filename):
