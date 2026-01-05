@@ -56,10 +56,30 @@ jobs:
               "Content-Type": "application/json"
           }
 
-          def clean_workflow_data(data):
-              """Mantiene solo las propiedades permitidas por la API de n8n."""
-              allowed_keys = ['name', 'nodes', 'connections', 'settings', 'staticData', 'meta', 'active']
-              return {k: v for k, v in data.items() if k in allowed_keys}
+          def clean_for_api(data):
+              """
+              Crea un nuevo diccionario solo con las 4 propiedades 
+              que la API de n8n acepta oficialmente.
+              """
+              payload = {}
+              # 1. Nombre (Obligatorio)
+              payload['name'] = data.get('name', 'Restored Workflow')
+              
+              # 2. Nodos (Obligatorio)
+              payload['nodes'] = data.get('nodes', [])
+              
+              # 3. Conexiones (Obligatorio)
+              payload['connections'] = data.get('connections', {})
+              
+              # 4. Ajustes (Opcional pero seguro)
+              if 'settings' in data:
+                  payload['settings'] = data['settings']
+              
+              # 5. Estado (Opcional)
+              if 'active' in data:
+                  payload['active'] = bool(data['active'])
+                  
+              return payload
 
           def extract_id(filename):
               match = re.search(r'-([a-zA-Z0-9]+)\.json$', filename)
@@ -71,31 +91,35 @@ jobs:
 
               try:
                   with open(file_path, 'r', encoding='utf-8') as f:
-                      raw_data = json.load(f)
+                      content = json.load(f)
 
-                  # Manejar si es una lista o un objeto
-                  data = raw_data[0] if isinstance(raw_data, list) else raw_data
+                  # Extraer si es lista
+                  raw_data = content[0] if isinstance(content, list) else content
                   
-                  # LIMPIEZA: Solo enviamos lo que la API permite
-                  clean_data = clean_workflow_data(data)
+                  # LIMPIEZA TOTAL
+                  clean_payload = clean_for_api(raw_data)
 
                   url = f"{base_url}/workflows/{workflow_id}"
-                  check_res = requests.get(url, headers=headers)
+                  
+                  # Intentamos ver si existe
+                  check = requests.get(url, headers=headers)
 
-                  if check_res.status_code == 200:
-                      print(f"🔄 Actualizando: {workflow_id}")
-                      res = requests.put(url, headers=headers, json=clean_data)
+                  if check.status_code == 200:
+                      print(f"🔄 Actualizando ID: {workflow_id}")
+                      res = requests.put(url, headers=headers, json=clean_payload)
                   else:
-                      print(f"🆕 Creando nuevo (ID anterior no encontrado): {workflow_id}")
-                      res = requests.post(f"{base_url}/workflows", headers=headers, json=clean_data)
+                      print(f"🆕 Creando nuevo: {workflow_id}")
+                      res = requests.post(f"{base_url}/workflows", headers=headers, json=clean_payload)
                   
                   if res.status_code in [200, 201]:
                       print(f"✅ Éxito: {file_path}")
                   else:
                       print(f"❌ Error API ({res.status_code}): {res.text}")
+                      # Si vuelve a fallar, imprimimos las llaves que estamos enviando
+                      print(f"Enviadas las llaves: {list(clean_payload.keys())}")
 
               except Exception as e:
-                  print(f"💥 Error crítico: {str(e)}")
+                  print(f"💥 Error: {str(e)}")
 
           if mode == 'single':
               upload_workflow(target_file)
