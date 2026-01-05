@@ -34,7 +34,7 @@ jobs:
       - name: Run Import Script
         env:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
-          N8N_BASE_URL: 'http://n8n:5678/api/v1'
+          N8N_BASE_URL: 'https://process.waysolutions.co/api/v1'
           IMPORT_MODE: ${{ github.event.inputs.mode }}
           FILE_NAME: ${{ github.event.inputs.file_name }}
         run: |
