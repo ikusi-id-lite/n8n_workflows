@@ -58,26 +58,18 @@ jobs:
 
           def clean_for_api(data):
               """
-              Crea un nuevo diccionario solo con las 4 propiedades 
-              que la API de n8n acepta oficialmente.
+              Mantenemos solo lo estrictamente necesario.
+              Eliminamos 'active' porque la API lo marca como read-only.
               """
               payload = {}
-              # 1. Nombre (Obligatorio)
               payload['name'] = data.get('name', 'Restored Workflow')
-              
-              # 2. Nodos (Obligatorio)
               payload['nodes'] = data.get('nodes', [])
-              
-              # 3. Conexiones (Obligatorio)
               payload['connections'] = data.get('connections', {})
               
-              # 4. Ajustes (Opcional pero seguro)
               if 'settings' in data:
                   payload['settings'] = data['settings']
-              
-              # 5. Estado (Opcional)
-              if 'active' in data:
-                  payload['active'] = bool(data['active'])
+              if 'staticData' in data:
+                  payload['staticData'] = data['staticData']
                   
               return payload
 
@@ -93,15 +85,10 @@ jobs:
                   with open(file_path, 'r', encoding='utf-8') as f:
                       content = json.load(f)
 
-                  # Extraer si es lista
                   raw_data = content[0] if isinstance(content, list) else content
-                  
-                  # LIMPIEZA TOTAL
                   clean_payload = clean_for_api(raw_data)
 
                   url = f"{base_url}/workflows/{workflow_id}"
-                  
-                  # Intentamos ver si existe
                   check = requests.get(url, headers=headers)
 
                   if check.status_code == 200:
@@ -115,8 +102,6 @@ jobs:
                       print(f"✅ Éxito: {file_path}")
                   else:
                       print(f"❌ Error API ({res.status_code}): {res.text}")
-                      # Si vuelve a fallar, imprimimos las llaves que estamos enviando
-                      print(f"Enviadas las llaves: {list(clean_payload.keys())}")
 
               except Exception as e:
                   print(f"💥 Error: {str(e)}")
