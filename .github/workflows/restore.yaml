@@ -92,19 +92,19 @@ jobs:
                   check = requests.get(url, headers=headers)
 
                   if check.status_code == 200:
-                      print(f"🔄 Actualizando ID: {workflow_id}")
+                      print(f"Actualizando ID: {workflow_id}")
                       res = requests.put(url, headers=headers, json=clean_payload)
                   else:
-                      print(f"🆕 Creando nuevo: {workflow_id}")
+                      print(f"Creando nuevo: {workflow_id}")
                       res = requests.post(f"{base_url}/workflows", headers=headers, json=clean_payload)
                   
                   if res.status_code in [200, 201]:
-                      print(f"✅ Éxito: {file_path}")
+                      print(f"Exito: {file_path}")
                   else:
-                      print(f"❌ Error API ({res.status_code}): {res.text}")
+                      print(f"Error API ({res.status_code}): {res.text}")
 
               except Exception as e:
-                  print(f"💥 Error: {str(e)}")
+                  print(f"Error: {str(e)}")
 
           if mode == 'single':
               upload_workflow(target_file)
