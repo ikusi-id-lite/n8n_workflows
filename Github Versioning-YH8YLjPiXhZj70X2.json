@@ -951,6 +951,7 @@
           "type": "personal",
           "icon": null,
           "description": null,
+          "creatorId": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
           "projectRelations": [
             {
               "updatedAt": "2025-06-03T14:16:48.113Z",
@@ -958,7 +959,7 @@
               "userId": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
               "projectId": "1qeaHhKiuNkXtH1U",
               "user": {
-                "updatedAt": "2026-01-02T13:28:24.000Z",
+                "updatedAt": "2026-01-05T14:08:24.000Z",
                 "createdAt": "2025-06-03T14:16:46.790Z",
                 "id": "3831f1fb-6eca-4d66-bd1a-eb6a9e9bb0fb",
                 "email": "manuel.duarte@waysolutions.co",
@@ -990,7 +991,7 @@
                 },
                 "disabled": false,
                 "mfaEnabled": false,
-                "lastActiveAt": "2026-01-02",
+                "lastActiveAt": "2026-01-05",
                 "isPending": false
               }
             }
