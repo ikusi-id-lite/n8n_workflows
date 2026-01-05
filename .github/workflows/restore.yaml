@@ -1,4 +1,4 @@
-name: n8n Import Workflows (Optimized)
+name: n8n Import Workflows (Optimized arc-runner-set)
 
 on:
   workflow_dispatch:
@@ -12,13 +12,13 @@ on:
           - single
           - all
       file_name:
-        description: 'Archivo (ej: mi-flujo-12.json)'
+        description: 'Archivo (ej: mi-flujo-YH8YLjPiXhZj70X2.json)'
         required: false
         default: ''
 
 jobs:
   import-n8n:
-    runs-on: arc-runner-set
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -56,43 +56,50 @@ jobs:
           }
 
           def extract_id(filename):
-              # Busca el ID al final del nombre antes de .json (ej: nombre-12.json -> 12)
-              match = re.search(r'-(\d+)\.json$', filename)
+              # Cambiado de \d+ a [a-zA-Z0-9]+ para soportar IDs alfanuméricos
+              # Busca lo que esté entre el último '-' y el '.json'
+              match = re.search(r'-([a-zA-Z0-9]+)\.json$', filename)
               return match.group(1) if match else None
 
           def upload_workflow(file_path):
               workflow_id = extract_id(file_path)
               if not workflow_id:
-                  print(f"No se pudo extraer ID de: {file_path}. Saltando...")
+                  print(f"⚠️ No se pudo extraer ID de: {file_path}. Saltando...")
+                  return
+
+              if not os.path.exists(file_path):
+                  print(f"❌ El archivo {file_path} no existe en el repo.")
                   return
 
               with open(file_path, 'r') as f:
                   workflow_data = json.load(f)
 
-              # Limpiamos el ID del cuerpo para evitar conflictos, n8n usará el de la URL
+              # Limpieza: Para actualizar, n8n no debe recibir el ID dentro del body
               workflow_data.pop('id', None)
 
-              # 1. Intentar verificar si el workflow existe por ID
+              # Intentar ver si existe
               check_res = requests.get(f"{base_url}/workflows/{workflow_id}", headers=headers)
 
               if check_res.status_code == 200:
-                  print(f"Actualizando workflow ID: {workflow_id}")
+                  print(f"🔄 Actualizando workflow ID: {workflow_id}")
                   res = requests.put(f"{base_url}/workflows/{workflow_id}", headers=headers, json=workflow_data)
               else:
-                  print(f"El ID {workflow_id} no existe. Creando como nuevo flujo...")
+                  print(f"🆕 El ID {workflow_id} no existe en n8n. Creando como nuevo...")
                   res = requests.post(f"{base_url}/workflows", headers=headers, json=workflow_data)
               
               if res.status_code in [200, 201]:
-                  print(f"Éxito: {file_path}")
+                  print(f"✅ Éxito: {file_path}")
               else:
-                  print(f"Error en {file_path}: {res.status_code} - {res.text}")
+                  print(f"❌ Error en {file_path}: {res.status_code} - {res.text}")
 
           if mode == 'single':
               if target_file:
                   upload_workflow(target_file)
               else:
-                  print("Error: No se especificó archivo.")
+                  print("❌ Error: Modo 'single' requiere un nombre de archivo.")
           else:
-              for f in glob.glob("*.json"):
+              files = glob.glob("*.json")
+              print(f"📂 Encontrados {len(files)} archivos JSON.")
+              for f in files:
                   upload_workflow(f)
           EOF
