@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-01T19:17:51.527Z",
+  "updatedAt": "2026-06-01T19:27:15.114Z",
   "createdAt": "2026-06-01T19:17:33.325Z",
   "id": "qte3zh_wwkJTKyldgGYw7",
   "name": "testing",
@@ -25,8 +25,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        208,
-        0
+        -16,
+        240
       ],
       "id": "d7bbff8c-f5c6-4923-ab0f-27a40fba85fd",
       "name": "Edit Fields"
@@ -45,6 +45,19 @@
       ],
       "id": "97058449-cde2-45bc-a26c-8d1b328c5f66",
       "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        368,
+        208
+      ],
+      "id": "141fa356-2ec1-425e-bf23-fd23b15d5e14",
+      "name": "AI Agent"
     }
   ],
   "connections": {
@@ -53,6 +66,17 @@
         [
           {
             "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -68,9 +92,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "10ea1464-10aa-4588-866e-a954200c4b2a",
+  "versionId": "6167b9cc-d587-46e6-b6dd-3f8f96fd2776",
   "activeVersionId": null,
-  "versionCounter": 6,
+  "versionCounter": 9,
   "triggerCount": 0,
   "shared": [
     {
